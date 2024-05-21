@@ -27,7 +27,32 @@ class SampleGeneration:
                 if (0<=rx_locat[i, 0]<=self.region_length and 0<=rx_locat[i, 1]<=self.region_length):
                     got_valid_rx = True
         
+        pathloss = np.zeros([self.NofLinks, self.NofLinks])
+        for i in range(self.NofLinks):
+            for j in range(self.NofLinks):
+                distance = np.sqrt((rx_locat[i, 0]-tx_locat[j, 0])**2 + (rx_locat[i, 1]-tx_locat[j, 1])**2)
+                pathloss[i, j] = 0
+
+
         return tx_locat, rx_locat
 
-    def trainSamples(self):
-        pass
+    def trainSamples(self, *filename):
+        if not len(filename):
+            filename = "data_" + str(self.NofLinks) + "links_" + str(self.region_length) + "regions_" + str(self.NofSamples) + "samples.npy" 
+
+        samples = []
+        for i in range(self.NofSamples):
+            tx_locat, rx_locat = self.generateOneSample()
+            samples.append([tx_locat, rx_locat])
+
+        np.save(filename, samples)
+
+    def trainSamples(self, NofSamples:int, *filename):
+        if not len(filename):
+            filename = "data_" + str(self.NofLinks) + "links_" + str(self.region_length) + "regions_" + str(NofSamples) + "samples.npy" 
+        samples = []
+        for i in range(NofSamples):
+            tx_locat, rx_locat = self.generateOneSample()
+            samples.append([tx_locat, rx_locat])
+
+        np.save(filename, samples)
