@@ -1,21 +1,24 @@
-"""
-Generate train samples of SpatialNet
-"""
+# Generate train samples of SpatialNet
+
 import numpy as np
+from helper_functions import computePathloss
 
 class SampleGeneration:
-    def __init__(self, NofSamples, NofLinks, region_length) -> None:
+    def __init__(self, NofSamples, gen_para) -> None:
         '''
             region_length: the length and width of the region where D2D links locates
         '''
         self.NofSamples = NofSamples
-        self.NofLinks = NofLinks
-        self.region_length = region_length
+        self.NofLinks = gen_para.NofLinks
+        self.region_length = gen_para.region_length
+        self.shortest_directLink_length = gen_para.shortest_directLink_length
+        self.longest_directLink_length = gen_para.shortest_directLink_length
+        self.setting_str = gen_para.setting_str
 
-    def generateOneSample(self):
+    def generateOneSample(self, gen_para):
         tx_locat = np.random.uniform(low=0, high=self.region_length, size=[self.NofLinks, 2])
-        d_min = np.random.uniform(low=2, high=70)
-        d_max = np.random.uniform(low=d_min, high=70)
+        d_min = np.random.uniform(low=self.shortest_directLink_length, high=self.longest_directLink_length)
+        d_max = np.random.uniform(low=d_min, high=self.longest_directLink_length)
         rx_locat = np.copy(tx_locat)
         for i in range(self.NofLinks):
             got_valid_rx = False
@@ -27,32 +30,31 @@ class SampleGeneration:
                 if (0<=rx_locat[i, 0]<=self.region_length and 0<=rx_locat[i, 1]<=self.region_length):
                     got_valid_rx = True
         
-        pathloss = np.zeros([self.NofLinks, self.NofLinks])
+        distance = np.zeros([self.NofLinks, self.NofLinks])
         for i in range(self.NofLinks):
             for j in range(self.NofLinks):
-                distance = np.sqrt((rx_locat[i, 0]-tx_locat[j, 0])**2 + (rx_locat[i, 1]-tx_locat[j, 1])**2)
-                pathloss[i, j] = 0
+                distance[i, j] = np.sqrt((rx_locat[i, 0]-tx_locat[j, 0])**2 + (rx_locat[i, 1]-tx_locat[j, 1])**2)
+        pathloss = computePathloss(gen_para, distance)
 
-
-        return tx_locat, rx_locat
+        return tx_locat, rx_locat, pathloss
 
     def trainSamples(self, *filename):
         if not len(filename):
-            filename = "data_" + str(self.NofLinks) + "links_" + str(self.region_length) + "regions_" + str(self.NofSamples) + "samples.npy" 
+            filename = self.setting_str + ".npy" 
 
         samples = []
         for i in range(self.NofSamples):
-            tx_locat, rx_locat = self.generateOneSample()
-            samples.append([tx_locat, rx_locat])
+            tx_locat, rx_locat, pathloss = self.generateOneSample()
+            samples.append([tx_locat, rx_locat, pathloss])
 
         np.save(filename, samples)
 
     def trainSamples(self, NofSamples:int, *filename):
         if not len(filename):
-            filename = "data_" + str(self.NofLinks) + "links_" + str(self.region_length) + "regions_" + str(NofSamples) + "samples.npy" 
+            filename = self.setting_str + ".npy" 
         samples = []
         for i in range(NofSamples):
-            tx_locat, rx_locat = self.generateOneSample()
-            samples.append([tx_locat, rx_locat])
+            tx_locat, rx_locat, pathloss = self.generateOneSample()
+            samples.append([tx_locat, rx_locat, pathloss])
 
         np.save(filename, samples)
