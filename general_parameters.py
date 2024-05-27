@@ -25,4 +25,4 @@ class parameters():
         self.setting_str = "{}_links_{}X{}_{}_{}_length".format(self.NofLinks, self.region_length, self.region_length, self.shortest_directLink_length, self.longest_directLink_length)
         # 2D occupancy grid setting
         self.cell_length = 5
-        self.n_grids = np.round(self.field_length/self.cell_length).astype(int)
+        self.n_grids = np.round(self.region_length/self.cell_length).astype(int)
