@@ -2,7 +2,7 @@ import numpy as np
 
 def computePathloss(gen_para, distances):
     N = np.shape(distances)[-1]
-    assert N==gen_para.n_links
+    assert N==gen_para.NofLinks
 
     h1 = gen_para.tx_height
     h2 = gen_para.rx_height

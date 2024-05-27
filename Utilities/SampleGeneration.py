@@ -4,18 +4,18 @@ import numpy as np
 from helper_functions import computePathloss
 
 class SampleGeneration:
-    def __init__(self, NofSamples, gen_para) -> None:
+    def __init__(self, gen_para) -> None:
         '''
             region_length: the length and width of the region where D2D links locates
         '''
-        self.NofSamples = NofSamples
         self.NofLinks = gen_para.NofLinks
         self.region_length = gen_para.region_length
         self.shortest_directLink_length = gen_para.shortest_directLink_length
         self.longest_directLink_length = gen_para.shortest_directLink_length
         self.setting_str = gen_para.setting_str
+        self.gen_para = gen_para
 
-    def generateOneSample(self, gen_para):
+    def generateOneSample(self):
         tx_locat = np.random.uniform(low=0, high=self.region_length, size=[self.NofLinks, 2])
         d_min = np.random.uniform(low=self.shortest_directLink_length, high=self.longest_directLink_length)
         d_max = np.random.uniform(low=d_min, high=self.longest_directLink_length)
@@ -34,27 +34,19 @@ class SampleGeneration:
         for i in range(self.NofLinks):
             for j in range(self.NofLinks):
                 distance[i, j] = np.sqrt((rx_locat[i, 0]-tx_locat[j, 0])**2 + (rx_locat[i, 1]-tx_locat[j, 1])**2)
-        pathloss = computePathloss(gen_para, distance)
+        pathloss = computePathloss(self.gen_para, distance)
 
         return tx_locat, rx_locat, pathloss
 
-    def trainSamples(self, *filename):
-        if not len(filename):
-            filename = self.setting_str + ".npy" 
-
-        samples = []
-        for i in range(self.NofSamples):
-            tx_locat, rx_locat, pathloss = self.generateOneSample()
-            samples.append([tx_locat, rx_locat, pathloss])
-
-        np.save(filename, samples)
-
     def trainSamples(self, NofSamples:int, *filename):
         if not len(filename):
-            filename = self.setting_str + ".npy" 
-        samples = []
+            filename = [self.setting_str + "_txrx.npy", self.setting_str + "_pathloss.npy"]
+        txrx_samples = []
+        pathloss_samples = []
         for i in range(NofSamples):
             tx_locat, rx_locat, pathloss = self.generateOneSample()
-            samples.append([tx_locat, rx_locat, pathloss])
+            txrx_samples.append([tx_locat, rx_locat])
+            pathloss_samples.append(pathloss)
 
-        np.save(filename, samples)
+        np.save(filename[0], txrx_samples)
+        np.save(filename[1], pathloss_samples)
