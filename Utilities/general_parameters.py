@@ -6,6 +6,7 @@ class parameters():
     def __init__(self):
         # wireless network settings
         self.NofLinks = 50
+        self.NofBlocks = 5
         self.region_length = 1000
         self.shortest_directLink_length = 2
         self.longest_directLink_length = 70
@@ -26,3 +27,4 @@ class parameters():
         # 2D occupancy grid setting
         self.cell_length = 5
         self.n_grids = np.round(self.region_length/self.cell_length).astype(int)
+        self.dt = 0.001
