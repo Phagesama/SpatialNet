@@ -20,13 +20,16 @@ class layoutDataset(Dataset):
         self.NofSamples = len(self.data)
         self.pathloss_data = np.load(filename[1])
 
-        self.tx_layout = torch.ones(self.NofSamples, self.NofLinks, 3, device=device)
-        self.rx_layout = torch.ones(self.NofSamples, self.NofLinks, 3, device=device)
+        self.tx_layout = torch.ones(self.NofSamples, self.NofLinks, 2, device=device)
+        self.rx_layout = torch.ones(self.NofSamples, self.NofLinks, 2, device=device)
         self.pathloss = torch.zeros(self.NofSamples, self.NofLinks, self.NofLinks, device=device)
         for i in range(self.NofSamples):
-            self.tx_layout[i, :, 0:1] = torch.floor(torch.from_numpy(self.data[i][0]).to(device=device)/self.cell_length)
-            self.rx_layout[i, :, 0:1] = torch.floor(torch.from_numpy(self.data[i][1]).to(device=device)/self.cell_length)
+            self.tx_layout[i, :, :] = torch.floor(torch.from_numpy(self.data[i][0]).to(device=device)/self.cell_length)
+            self.rx_layout[i, :, :] = torch.floor(torch.from_numpy(self.data[i][1]).to(device=device)/self.cell_length)
             self.pathloss[i, :, :] = torch.from_numpy(self.pathloss_data[i]).to(device=device)
 
     def __getitem__(self, index):
-        return torch.cat([self.tx_layout[index, :, :].unsqueeze(0), self.rx_layout[index, :, :].unsqueeze(0)], dim=0)
+        return self.tx_layout[index, :, :], self.rx_layout[index, :, :], self.pathloss[index, :, :]
+    
+    def __len__(self):
+        return self.tx_layout.shape[0]

@@ -16,6 +16,7 @@ class Objective_Func(nn.Module):
         self.outa = None
         self.lam = lam
         self.rho = rho
+        self.power_level = gen_para.tx_power
     
     def outage(self, powers):
         NofBlocks = powers.shape[0]
@@ -36,10 +37,11 @@ class Objective_Func(nn.Module):
 
     def forward(self, powers):
 
-        NofBlocks = powers.shape[0]
-        self.outa = self.outage(powers)
+        power = powers * self.power_level
+        NofBlocks = power.shape[0]
+        self.outa = self.outage(power)
 
-        E = powers[0, :] + torch.sum(powers[1:, :] * self.outa[:NofBlocks - 1, :], dim=0)
+        E = power[0, :] + torch.sum(power[1:, :] * self.outa[:NofBlocks - 1, :], dim=0)
 
         D = 1 + torch.sum(self.outa[:NofBlocks - 1, :], dim=0)
 
