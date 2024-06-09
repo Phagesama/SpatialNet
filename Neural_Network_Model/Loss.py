@@ -3,48 +3,52 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Objective_Func(nn.Module):
-    def __init__(self, pathloss, gen_para, t, lam, rho, device = "cuda"):
+    def __init__(self, gen_para, t, lam, rho, device = "cuda"):
         super().__init__()
-        self.pathloss = pathloss
-        self.NofLinks = pathloss.shape[0]
+        self.NofLinks = gen_para.NofLinks
         self.noise_power = gen_para.input_noise_power
         self.dt = gen_para.dt
         self.device = device
         self.pow2t_array = torch.pow(2, torch.arange(0, t, self.dt, device=device))
         self.pow2t_1_array = self.pow2t_array - 1
-        self.t_array_len = self.t_array.shape[0]
+        self.t_array_len = self.pow2t_array.shape[0]
         self.outa = None
         self.lam = lam
         self.rho = rho
         self.power_level = gen_para.tx_power
     
-    def outage(self, powers):
-        NofBlocks = powers.shape[0]
-        signal = self.pathloss.expand(NofBlocks, self.NofLinks, self.NofLinks) * powers.expand(self.NofLinks, NofBlocks, self.NofLinks).permute(1, 0, 2)
-        y_ii = torch.diag(signal)
-        y_ij = torch.sum(signal - y_ii, dim=2)
+    def outage(self, pathloss, powers):
+
+        batch_size = powers.shape[0]
+        NofBlocks = powers.shape[1]
+        signal = pathloss.expand(batch_size, NofBlocks, self.NofLinks, self.NofLinks) * powers.expand(batch_size, self.NofLinks, NofBlocks, self.NofLinks).permute(0, 2, 3, 1)
+        y_ii = torch.diagonal(signal, dim1=2, dim2=3)
+        y_ij = torch.sum(signal - y_ii, dim=3)
         sinr = y_ii/(y_ij + self.noise_power)
 
         outa = []
-        Q_i1 = 1 - torch.exp(-(self.pow2t_1_array.expand(self.NofLinks, self.t_array_len) * sinr[0, :].expand(self.NofLinks, self.t_array_len)))
-        outa.append(Q_i1[:, self.t_array_len])
+        Q_i1 = 1 - torch.exp(-(self.pow2t_1_array.expand(batch_size, self.NofLinks, self.t_array_len) * sinr[:, 0, :].expand(batch_size, self.NofLinks, self.t_array_len)))
+        outa.append(Q_i1[:, :, self.t_array_len])
+        Q_i1 = Q_i1.reshape(batch_size * self.NofLinks, self.t_array_len)
         for n in range(1, NofBlocks):
             q_ii = torch.exp(-(self.pow2t_1_array.expand(self.NofLinks, self.t_array_len) * sinr[n, :].expand(self.NofLinks, self.t_array_len))) * self.pow2t_array.expand(self.NofLinks, self.t_array_len) * sinr[n, :].expand(self.NofLinks, self.t_array_len) * torch.log(2)
+            q_ii = q_ii.reshape(batch_size * self.NofLinks, self.t_array_len)
             Q_in = F.conv1d(Q_i1, q_ii.unsqueeze(1), padding=self.t_array_len - 1, groups=self.NofLinks)[:, :self.t_array_len] * self.dt
-            outa.append(Q_in[:, self.t_array_len])
+            Q_in = Q_in.reshape(batch_size, self.NofLinks, self.t_array_len)
+            outa.append(Q_in[:, :, self.t_array_len])
         
-        return torch.stack(outa)
+        return torch.stack(outa, dim=1)
 
-    def forward(self, powers):
+    def forward(self, pathloss, powers):
 
         power = powers * self.power_level
-        NofBlocks = power.shape[0]
-        self.outa = self.outage(power)
+        NofBlocks = power.shape[1]
+        self.outa = self.outage(pathloss, power)
 
-        E = power[0, :] + torch.sum(power[1:, :] * self.outa[:NofBlocks - 1, :], dim=0)
+        E = power[:, 0, :] + torch.sum(power[:, 1:, :] * self.outa[:, :NofBlocks - 1, :], dim=1)
 
-        D = 1 + torch.sum(self.outa[:NofBlocks - 1, :], dim=0)
+        D = 1 + torch.sum(self.outa[:, :NofBlocks - 1, :], dim=1)
 
-        loss = torch.sum(E) + self.lam*torch.sum(self.outa[NofBlocks,:]) + self.rho*torch.sum(D)
+        loss = torch.sum(torch.sum(E) + self.lam*torch.sum(self.outa[NofBlocks,:]) + self.rho*torch.sum(D))
 
         return loss
