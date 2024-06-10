@@ -36,7 +36,6 @@ class SpatialNet(nn.Module):
 
             TxIDX = T.clone()
             RxIDX = R.clone()
-            print(i)
             DSS.append(self.conv_kernel.expand(batch_size, self.N, self.C, self.C).reshape(batch_size*self.N, self.C, self.C)[torch.tensor(range(batch_size*self.N), device=device), 
                                                                                                                               (R[:, :, i, 2].view(batch_size*self.N) - T[:, :, i, 2].view(batch_size*self.N) + (self.C + 1)/2).to(dtype = torch.int),  
                                                                                                                               (R[:, :, i, 3].view(batch_size*self.N) - T[:, :, i, 3].view(batch_size*self.N) + (self.C + 1)/2).to(dtype = torch.int)].view(batch_size, self.N, 1))
@@ -46,7 +45,7 @@ class SpatialNet(nn.Module):
             TxIDX = TxIDX.view(batch_size * self.N * self.NofLinks, 4).permute(1, 0)
             value = powers.view(batch_size * self.N * self.NofLinks)[(TxIDX[2, :]>=0) & (TxIDX[2, :]<=62) & (TxIDX[3, :]>=0) & (TxIDX[3,:]<=62)]
             TxIDX = TxIDX[:, (TxIDX[2, :]>=0) & (TxIDX[2, :]<=62) & (TxIDX[3, :]>=0) & (TxIDX[3,:]<=62)]
-            Tx_Conv = torch.sparse_coo_tensor(TxIDX, value, size=(batch_size, self.N, self.C, self.C)).to_dense() * self.conv_kernel#.expand(batch_size, self.N, self.C, self.C)
+            Tx_Conv = torch.sparse_coo_tensor(TxIDX, value, size=(batch_size, self.N, self.C, self.C)).to_dense() * self.conv_kernel.expand(batch_size, self.N, self.C, self.C)
             Tx_INT.append(torch.sum(torch.sum(Tx_Conv, dim=3), dim=2, keepdim=True))
 
             TxIDX = T.clone()
@@ -57,7 +56,7 @@ class SpatialNet(nn.Module):
             RxIDX = RxIDX.view(batch_size * self.N * self.NofLinks, 4).permute(1, 0)
             value = powers.view(batch_size * self.N * self.NofLinks)[(RxIDX[2, :]>=0) & (RxIDX[2, :]<=62) & (RxIDX[3, :]>=0) & (RxIDX[3,:]<=62)]
             RxIDX = RxIDX[:, (RxIDX[2, :]>=0) & (RxIDX[2, :]<=62) & (RxIDX[3, :]>=0) & (RxIDX[3,:]<=62)]
-            Rx_Conv = torch.sparse_coo_tensor(RxIDX, value, size=(batch_size, self.N, self.C, self.C)).to_dense() * self.conv_kernel#.expand(batch_size, self.N, self.C, self.C)
+            Rx_Conv = torch.sparse_coo_tensor(RxIDX, value, size=(batch_size, self.N, self.C, self.C)).to_dense() * self.conv_kernel.expand(batch_size, self.N, self.C, self.C)
             Rx_INT.append(torch.sum(torch.sum(Rx_Conv, dim=3), dim=2, keepdim=True))
 
         Tx_INT = torch.stack(Tx_INT, dim=2) #batch_size, NofBlocks, NofLinks

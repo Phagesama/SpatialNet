@@ -21,9 +21,9 @@ class Objective_Func(nn.Module):
 
         batch_size = powers.shape[0]
         NofBlocks = powers.shape[1]
-        signal = pathloss.expand(batch_size, NofBlocks, self.NofLinks, self.NofLinks) * powers.expand(batch_size, self.NofLinks, NofBlocks, self.NofLinks).permute(0, 2, 3, 1)
+        signal = pathloss.expand(NofBlocks, batch_size, self.NofLinks, self.NofLinks).permute(1, 0, 2 ,3) * powers.expand(self.NofLinks, batch_size, NofBlocks, self.NofLinks).permute(1, 2, 3, 0)
         y_ii = torch.diagonal(signal, dim1=2, dim2=3)
-        y_ij = torch.sum(signal - y_ii, dim=3)
+        y_ij = torch.sum(signal, dim=3) - y_ii
         sinr = y_ii/(y_ij + self.noise_power)
 
         outa = []
