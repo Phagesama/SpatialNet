@@ -1,7 +1,7 @@
 # Generate train samples of SpatialNet
 
 import numpy as np
-from helper_functions import computePathloss
+from Utilities.helper_functions import computePathloss
 
 class SampleGeneration:
     def __init__(self, gen_para) -> None:

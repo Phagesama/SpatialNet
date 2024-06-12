@@ -11,14 +11,14 @@ if __name__ == "__main__":
     gen_para = parameters()
 
     layouts = layoutDataset(gen_para)
-    batch_size=2
+    batch_size=1000
     train_dataloader = DataLoader(layouts, batch_size=batch_size)
 
     spatial_net = SpatialNet(gen_para.NofBlocks, 63, gen_para).to(device="cuda")
 
     loss_fun = Objective_Func(gen_para, 1, 10e5, 10e2)
 
-    learning_rate = 1e-2
+    learning_rate = 1e-4
     optimizer = torch.optim.SGD(spatial_net.parameters(), lr=learning_rate)
 
     epoch = 10

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 class Objective_Func(nn.Module):
     def __init__(self, gen_para, t, lam, rho, device = "cuda"):
@@ -27,15 +28,15 @@ class Objective_Func(nn.Module):
         sinr = y_ii/(y_ij + self.noise_power)
 
         outa = []
-        Q_i1 = 1 - torch.exp(-(self.pow2t_1_array.expand(batch_size, self.NofLinks, self.t_array_len) * sinr[:, 0, :].expand(batch_size, self.NofLinks, self.t_array_len)))
-        outa.append(Q_i1[:, :, self.t_array_len])
+        Q_i1 = 1 - torch.exp(-(self.pow2t_1_array.expand(batch_size, self.NofLinks, self.t_array_len) / sinr[:, 0, :].expand(self.t_array_len, batch_size, self.NofLinks).permute(1, 2, 0)))
+        outa.append(Q_i1[:, :, self.t_array_len - 1])
         Q_i1 = Q_i1.reshape(batch_size * self.NofLinks, self.t_array_len)
         for n in range(1, NofBlocks):
-            q_ii = torch.exp(-(self.pow2t_1_array.expand(self.NofLinks, self.t_array_len) * sinr[n, :].expand(self.NofLinks, self.t_array_len))) * self.pow2t_array.expand(self.NofLinks, self.t_array_len) * sinr[n, :].expand(self.NofLinks, self.t_array_len) * torch.log(2)
+            q_ii = torch.exp(-(self.pow2t_1_array.expand(batch_size, self.NofLinks, self.t_array_len) / sinr[:, n, :].expand(self.t_array_len, batch_size, self.NofLinks).permute(1, 2, 0))) * self.pow2t_array.expand(batch_size, self.NofLinks, self.t_array_len) / sinr[:, n, :].expand(self.t_array_len, batch_size, self.NofLinks).permute(1, 2, 0) * np.log(2)
             q_ii = q_ii.reshape(batch_size * self.NofLinks, self.t_array_len)
-            Q_in = F.conv1d(Q_i1, q_ii.unsqueeze(1), padding=self.t_array_len - 1, groups=self.NofLinks)[:, :self.t_array_len] * self.dt
+            Q_in = F.conv1d(Q_i1, q_ii.unsqueeze(1), padding=self.t_array_len - 1, groups=batch_size*self.NofLinks)[:, :self.t_array_len] * self.dt
             Q_in = Q_in.reshape(batch_size, self.NofLinks, self.t_array_len)
-            outa.append(Q_in[:, :, self.t_array_len])
+            outa.append(Q_in[:, :, self.t_array_len - 1])
         
         return torch.stack(outa, dim=1)
 
@@ -49,6 +50,6 @@ class Objective_Func(nn.Module):
 
         D = 1 + torch.sum(self.outa[:, :NofBlocks - 1, :], dim=1)
 
-        loss = torch.sum(torch.sum(E) + self.lam*torch.sum(self.outa[NofBlocks,:]) + self.rho*torch.sum(D))
+        loss = torch.sum(E) + self.lam*torch.sum(self.outa[:, NofBlocks - 1, :]) + self.rho*torch.sum(D)
 
         return loss
