@@ -16,9 +16,9 @@ class parameters():
         self.tx_height = 1.5
         self.rx_height = 1.5
         self.antenna_gain_decibel = 2.5
-        self.tx_power_milli_decibel = 40
+        self.tx_power_milli_decibel = 30
         self.tx_power = np.power(10, (self.tx_power_milli_decibel-30)/10)
-        self.noise_density_milli_decibel = -69
+        self.noise_density_milli_decibel = -169
         self.input_noise_power = np.power(10, ((self.noise_density_milli_decibel-30)/10)) * self.bandwidth
         self.output_noise_power = self.input_noise_power
         self.SNR_gap_dB = 6

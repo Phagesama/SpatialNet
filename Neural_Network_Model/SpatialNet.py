@@ -10,14 +10,14 @@ class SpatialNet(nn.Module):
         self.N = N
         self.C = C
 
-        kernel = torch.randn(N, C, C, device="cuda")
+        kernel = torch.ones(N, C, C, device="cuda", dtype=torch.double)
         self.conv_kernel = nn.Parameter(data=kernel)
         self.deep_network = nn.Sequential(
-            nn.Linear(4 * self.N * self.NofLinks + 2 * self.N, 4 * self.N * self.NofLinks + 2 * self.N * 30),
+            nn.Linear(4 * self.N * self.NofLinks + 2 * self.N, 4 * self.N * self.NofLinks + 2 * self.N * 30, dtype=torch.double),
             nn.ReLU(),
-            nn.Linear(4 * self.N * self.NofLinks + 2 * self.N * 30, 4 * self.N * self.NofLinks + 2 * self.N * 30),
+            nn.Linear(4 * self.N * self.NofLinks + 2 * self.N * 30, 4 * self.N * self.NofLinks + 2 * self.N * 30, dtype=torch.double),
             nn.ReLU(),
-            nn.Linear(4 * self.N * self.NofLinks + 2 * self.N * 30, self.N * self.NofLinks),
+            nn.Linear(4 * self.N * self.NofLinks + 2 * self.N * 30, self.N * self.NofLinks, dtype=torch.double),
             nn.Sigmoid()
         )
 
@@ -64,7 +64,6 @@ class SpatialNet(nn.Module):
         DSS = torch.stack(DSS, dim=2) #batch_size, NofBlocks, NofLinks
         DSS_min = torch.min(DSS, dim=2, keepdim=False).values.squeeze() #batch_size, NofBlocks
         DSS_max = torch.max(DSS, dim=2).values.squeeze() #batch_size, NofBlocks
-
         deep_input = torch.cat([Tx_INT.reshape(batch_size, self.N * self.NofLinks), Rx_INT.reshape(batch_size, self.N * self.NofLinks), DSS.reshape(batch_size, self.N * self.NofLinks), DSS_min, DSS_max, powers.reshape(batch_size, self.N * self.NofLinks)], dim=1)
 
-        return self.deep_network(deep_input).reshape(batch_size, self.N, self.NofLinks)
+        return self.deep_network(deep_input).reshape(batch_size, self.N, self.NofLinks)# * (1 - 1e-17) + 1e-17
