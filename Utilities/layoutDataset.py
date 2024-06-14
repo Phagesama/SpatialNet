@@ -15,7 +15,7 @@ class layoutDataset(Dataset):
         self.n_grids = gen_para.n_grids
 
         if not len(filename):
-            filename = [self.setting_str + "_txrx.npy", self.setting_str + "_pathloss.npy"]
+            filename = [self.setting_str + "_txrx500.npy", self.setting_str + "_pathloss500.npy"]
         self.data = np.load(filename[0])
         self.NofSamples = len(self.data)
         self.pathloss_data = np.load(filename[1])

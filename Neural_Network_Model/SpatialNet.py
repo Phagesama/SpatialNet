@@ -66,4 +66,4 @@ class SpatialNet(nn.Module):
         DSS_max = torch.max(DSS, dim=2).values.squeeze() #batch_size, NofBlocks
         deep_input = torch.cat([Tx_INT.reshape(batch_size, self.N * self.NofLinks), Rx_INT.reshape(batch_size, self.N * self.NofLinks), DSS.reshape(batch_size, self.N * self.NofLinks), DSS_min, DSS_max, powers.reshape(batch_size, self.N * self.NofLinks)], dim=1)
 
-        return self.deep_network(deep_input).reshape(batch_size, self.N, self.NofLinks)# * (1 - 1e-17) + 1e-17
+        return self.deep_network(deep_input).reshape(batch_size, self.N, self.NofLinks) * (1 - 1e-169) + 1e-169

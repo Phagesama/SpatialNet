@@ -18,10 +18,11 @@ if __name__ == "__main__":
 
     loss_fun = Objective_Func(gen_para, 1, 10e5, 10e2)
 
-    learning_rate = 1e-5
-    optimizer = torch.optim.SGD(spatial_net.parameters(), lr=learning_rate)
+    learning_rate = 1e-3
+    optimizer = torch.optim.Adam(spatial_net.parameters(), lr=learning_rate)
 
-    epoch = 500
+    epoch = 1000
+    losses = []
     for i in range(epoch):
         print("------Epoch {}------".format(i))
         for tx_layout, rx_layout, pathloss in train_dataloader:
@@ -40,7 +41,11 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
 
-            print("Loss: {}".format(loss.item()))
+            print("Epoch: {}/{}, Loss: {}".format(i, epoch, loss.item()))
+            losses.append(loss.item())
         
         if i % 50 == 0:
             torch.save(spatial_net.state_dict(), 'checkpoint_epoch{}.pt'.format(i))
+
+losses = torch.stack(losses)
+torch.save(losses, "losses.pt")

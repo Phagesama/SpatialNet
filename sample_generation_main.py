@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
     gen_para = parameters()
     sample_generator = SampleGeneration(gen_para)
-    sample_generator.trainSamples(80000)
+    sample_generator.trainSamples(500)
 
     layouts = layoutDataset(gen_para)
     print(layouts[0])

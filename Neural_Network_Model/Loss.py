@@ -26,6 +26,7 @@ class Objective_Func(nn.Module):
         y_ii = torch.diagonal(signal, dim1=2, dim2=3)
         y_ij = torch.sum(signal, dim=3) - y_ii
         sinr = y_ii/(y_ij + self.noise_power)
+        sinr.clamp_(1e-169)
 
         outa = []
         Q_in = 1 - torch.exp(-(self.pow2t_1_array.expand(batch_size, self.NofLinks, self.t_array_len) / sinr[:, 0, :].expand(self.t_array_len, batch_size, self.NofLinks).permute(1, 2, 0)))

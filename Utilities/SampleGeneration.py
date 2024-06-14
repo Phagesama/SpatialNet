@@ -11,7 +11,7 @@ class SampleGeneration:
         self.NofLinks = gen_para.NofLinks
         self.region_length = gen_para.region_length
         self.shortest_directLink_length = gen_para.shortest_directLink_length
-        self.longest_directLink_length = gen_para.shortest_directLink_length
+        self.longest_directLink_length = gen_para.longest_directLink_length
         self.setting_str = gen_para.setting_str
         self.gen_para = gen_para
 
@@ -27,6 +27,7 @@ class SampleGeneration:
                 rx_direct = np.random.uniform(low=0, high=2*np.pi)
                 rx_locat[i, 0] = tx_locat[i, 0] + np.cos(rx_direct) * rx_dist
                 rx_locat[i, 1] = tx_locat[i, 1] + np.sin(rx_direct) * rx_dist
+                
                 if (0<=rx_locat[i, 0]<=self.region_length and 0<=rx_locat[i, 1]<=self.region_length):
                     got_valid_rx = True
         
@@ -40,7 +41,7 @@ class SampleGeneration:
 
     def trainSamples(self, NofSamples:int, *filename):
         if not len(filename):
-            filename = [self.setting_str + "_txrx.npy", self.setting_str + "_pathloss.npy"]
+            filename = [self.setting_str + "_txrx{}.npy".format(NofSamples), self.setting_str + "_pathloss{}.npy".format(NofSamples)]
         txrx_samples = []
         pathloss_samples = []
         for i in range(NofSamples):
