@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     loss_fun = Objective_Func(gen_para, 1, 10e5, 10e2)
 
-    learning_rate = 1e-3
+    learning_rate = 5e-3
     optimizer = torch.optim.Adam(spatial_net.parameters(), lr=learning_rate)
 
     epoch = 1000
@@ -47,5 +47,5 @@ if __name__ == "__main__":
         if i % 50 == 0:
             torch.save(spatial_net.state_dict(), 'checkpoint_epoch{}.pt'.format(i))
 
-losses = torch.stack(losses)
+losses = torch.tensor(losses)
 torch.save(losses, "losses.pt")

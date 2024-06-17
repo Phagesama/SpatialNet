@@ -30,7 +30,9 @@ if __name__ == "__main__":
                         torch.tensor(range(gen_para.NofBlocks), device="cuda").expand(batch_size, gen_para.NofLinks, gen_para.NofBlocks).permute(0, 2, 1).unsqueeze(3), 
                            rx_layout.expand(gen_para.NofBlocks, batch_size, gen_para.NofLinks, 2).permute(1, 0, 2, 3)], dim=3).to(dtype=torch.double)
             
-        powers = spatial_net(T, R, torch.ones(batch_size, gen_para.NofBlocks, gen_para.NofLinks, device="cuda", dtype=torch.double)*0.001)
+        powers = spatial_net(T, R, torch.ones(batch_size, gen_para.NofBlocks, gen_para.NofLinks, device="cuda", dtype=torch.double))
         #print(powers)
-        outa = loss_fun.outage(pathloss, torch.ones(batch_size, gen_para.NofBlocks, gen_para.NofLinks, device="cuda", dtype=torch.double)*0.000001)
-        #print(outa[0, 4, :])
+        outa = loss_fun.outage(pathloss, torch.ones(batch_size, gen_para.NofBlocks, gen_para.NofLinks, device="cuda", dtype=torch.double)*1e-169)
+        print(outa[0, 4, :])
+        break
+    

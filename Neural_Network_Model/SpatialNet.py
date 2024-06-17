@@ -12,6 +12,7 @@ class SpatialNet(nn.Module):
 
         kernel = torch.ones(N, C, C, device="cuda", dtype=torch.double)
         self.conv_kernel = nn.Parameter(data=kernel)
+        self.normalize_layer = nn.BatchNorm2d(1)
         self.deep_network = nn.Sequential(
             nn.Linear(4 * self.N * self.NofLinks + 2 * self.N, 4 * self.N * self.NofLinks + 2 * self.N * 30, dtype=torch.double),
             nn.ReLU(),
@@ -62,8 +63,11 @@ class SpatialNet(nn.Module):
         Tx_INT = torch.stack(Tx_INT, dim=2) #batch_size, NofBlocks, NofLinks
         Rx_INT = torch.stack(Rx_INT, dim=2) #batch_size, NofBlocks, NofLinks
         DSS = torch.stack(DSS, dim=2) #batch_size, NofBlocks, NofLinks
-        DSS_min = torch.min(DSS, dim=2, keepdim=False).values.squeeze() #batch_size, NofBlocks
-        DSS_max = torch.max(DSS, dim=2).values.squeeze() #batch_size, NofBlocks
-        deep_input = torch.cat([Tx_INT.reshape(batch_size, self.N * self.NofLinks), Rx_INT.reshape(batch_size, self.N * self.NofLinks), DSS.reshape(batch_size, self.N * self.NofLinks), DSS_min, DSS_max, powers.reshape(batch_size, self.N * self.NofLinks)], dim=1)
+        deep_input = nn.functional.normalize(torch.cat([Tx_INT.reshape(batch_size, self.N * self.NofLinks), Rx_INT.reshape(batch_size, self.N * self.NofLinks), DSS.reshape(batch_size, self.N * self.NofLinks)], dim=1).reshape(batch_size * 3 * self.N * self.NofLinks), p=2, dim=0).reshape(batch_size, 3 * self.N * self.NofLinks)
+
+        DSS_min = torch.min(deep_input[:, 2*self.N*self.NofLinks:].reshape(batch_size, self.N,  self.NofLinks), dim=2, keepdim=False).values.squeeze() #batch_size, NofBlocks
+        DSS_max = torch.max(deep_input[:, 2*self.N*self.NofLinks:].reshape(batch_size, self.N,  self.NofLinks), dim=2).values.squeeze() #batch_size, NofBlocks
+        deep_input = torch.cat([deep_input.squeeze(), DSS_min, DSS_max, powers.reshape(batch_size, self.N * self.NofLinks)], dim=1)
+
 
         return self.deep_network(deep_input).reshape(batch_size, self.N, self.NofLinks) * (1 - 1e-169) + 1e-169

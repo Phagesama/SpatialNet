@@ -10,7 +10,7 @@ class Objective_Func(nn.Module):
         self.noise_power = gen_para.input_noise_power
         self.dt = gen_para.dt
         self.device = device
-        self.pow2t_array = torch.pow(2, torch.arange(0, t, self.dt, device=device))
+        self.pow2t_array = torch.pow(2, torch.arange(0, t+0.1*self.dt, self.dt, device=device))
         self.pow2t_1_array = self.pow2t_array - 1
         self.t_array_len = self.pow2t_array.shape[0]
         self.outa = None
@@ -26,19 +26,21 @@ class Objective_Func(nn.Module):
         y_ii = torch.diagonal(signal, dim1=2, dim2=3)
         y_ij = torch.sum(signal, dim=3) - y_ii
         sinr = y_ii/(y_ij + self.noise_power)
-        sinr.clamp_(1e-169)
+        #print(sinr)
+        #sinr.clamp_(1e-169)
 
         outa = []
-        Q_in = 1 - torch.exp(-(self.pow2t_1_array.expand(batch_size, self.NofLinks, self.t_array_len) / sinr[:, 0, :].expand(self.t_array_len, batch_size, self.NofLinks).permute(1, 2, 0)))
-        outa.append(Q_in[:, :, self.t_array_len - 1])
-        Q_in = Q_in.reshape(batch_size * self.NofLinks, self.t_array_len)
+        Q_in = (1 - torch.exp(-(self.pow2t_1_array.expand(batch_size, self.NofLinks, self.t_array_len) / sinr[:, 0, :].expand(self.t_array_len, batch_size, self.NofLinks).permute(1, 2, 0))))[:, :, 1:]
+        outa.append(Q_in[:, :, self.t_array_len - 2])
+        Q_in = Q_in.reshape(batch_size * self.NofLinks, self.t_array_len-1)
 
         for n in range(1, NofBlocks):
-            q_in = torch.exp(-(self.pow2t_1_array.expand(batch_size, self.NofLinks, self.t_array_len) / sinr[:, n, :].expand(self.t_array_len, batch_size, self.NofLinks).permute(1, 2, 0))) * self.pow2t_array.expand(batch_size, self.NofLinks, self.t_array_len) / sinr[:, n, :].expand(self.t_array_len, batch_size, self.NofLinks).permute(1, 2, 0) * np.log(2)
-            q_in = q_in.reshape(batch_size * self.NofLinks, self.t_array_len).flip(dims=[1])
-            #print(q_in[0])
-            Q_in = F.conv1d(Q_in, q_in.unsqueeze(1), padding=self.t_array_len - 1, groups=batch_size*self.NofLinks)[:, :self.t_array_len] * self.dt
-            outa.append(Q_in.view(batch_size, self.NofLinks, self.t_array_len)[:, :, self.t_array_len - 1])
+            F_in = (1 - torch.exp(-(self.pow2t_1_array.expand(batch_size, self.NofLinks, self.t_array_len) / sinr[:, 0, :].expand(self.t_array_len, batch_size, self.NofLinks).permute(1, 2, 0)))).reshape(batch_size * self.NofLinks, self.t_array_len)
+            f_in = F_in.diff().flip(dims=[1])/self.dt
+            #q_in = torch.exp(-(self.pow2t_1_array.expand(batch_size, self.NofLinks, self.t_array_len) / sinr[:, n, :].expand(self.t_array_len, batch_size, self.NofLinks).permute(1, 2, 0))) * self.pow2t_array.expand(batch_size, self.NofLinks, self.t_array_len) / sinr[:, n, :].expand(self.t_array_len, batch_size, self.NofLinks).permute(1, 2, 0) * np.log(2)
+            #q_in = q_in.reshape(batch_size * self.NofLinks, self.t_array_len).flip(dims=[1])
+            Q_in = F.conv1d(Q_in, f_in.unsqueeze(1), padding=self.t_array_len - 2, groups=batch_size*self.NofLinks)[:, :self.t_array_len - 1] * self.dt
+            outa.append(Q_in.view(batch_size, self.NofLinks, self.t_array_len-1)[:, :, self.t_array_len - 2])
         
         return torch.stack(outa, dim=1)
 
