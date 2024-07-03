@@ -55,6 +55,6 @@ class Objective_Func(nn.Module):
 
         D = 1 + torch.sum(self.outa[:, :NofBlocks - 1, :], dim=1)
 
-        loss = torch.sum(E) + self.lam*torch.sum(self.outa[:, NofBlocks - 1, :]) + self.rho*torch.sum(D)
+        loss = torch.sum(E) + self.lam*torch.sum(self.outa[:, NofBlocks - 1, :] - 1e-2)# + self.rho*torch.sum(D)
 
         return loss

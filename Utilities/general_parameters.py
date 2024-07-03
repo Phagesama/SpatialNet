@@ -6,7 +6,7 @@ class parameters():
     def __init__(self):
         # wireless network settings
         self.NofLinks = 50
-        self.NofBlocks = 5
+        self.NofBlocks = 1
         self.region_length = 1000
         self.shortest_directLink_length = 2
         self.longest_directLink_length = 70
@@ -16,7 +16,7 @@ class parameters():
         self.tx_height = 1.5
         self.rx_height = 1.5
         self.antenna_gain_decibel = 2.5
-        self.tx_power_milli_decibel = 30
+        self.tx_power_milli_decibel = 40
         self.tx_power = np.power(10, (self.tx_power_milli_decibel-30)/10)
         self.noise_density_milli_decibel = -169
         self.input_noise_power = np.power(10, ((self.noise_density_milli_decibel-30)/10)) * self.bandwidth
